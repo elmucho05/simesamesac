@@ -63,17 +63,23 @@ class RiepilogoGiorno(object):
         self.r_giorno = RiunioneGiorno()
     def get_dettagli_giornata(self, data):
         lista_riunioni = list(self.r_giorno.get_riunione_giorno(data).values())
-        totale_ore = sum(item["durata"] for item in lista_riunioni)
-
-        meeting_piu_lungo = max(lista_riunioni, key=lambda x:x["durata"])
-        dannato = meeting_piu_lungo["colpevole"]
-        response = {
-            "data": data,
-            "dannato_del_giorno": dannato,
-            "riunioni": lista_riunioni,
-            "totale_ore": totale_ore
-        }
-
+        if lista_riunioni:
+            totale_ore = sum(item["durata"] for item in lista_riunioni)
+            meeting_piu_lungo = max(lista_riunioni, key=lambda x:x["durata"])
+            dannato = meeting_piu_lungo["colpevole"]
+            response = {
+                "data": data,
+                "totale_ore": totale_ore,
+                "dannato_del_giorno": dannato,
+                "riunioni": lista_riunioni,
+            }
+        else:
+            response = {
+                "data": data,
+                "totale_ore": 0,
+                "dannato_del_giorno": "",
+                "riunioni" : []
+            }
         return response
 
 if __name__ == "__main__":

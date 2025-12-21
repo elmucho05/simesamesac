@@ -53,7 +53,7 @@ class PrenotazioneResource(Resource):
         if not time_pattern.match(orario_inizio):
             return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
         if time_from_str(orario_inizio).hour<8 or time_from_str(orario_inizio).hour > 19 :
-            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+           return "Conflitto di orario (sovrapposizione, inizio non valido o termine dopo le 20:00)", 422
         lista_riunioni = riunione_giorno.get_riunione_giorno(date) 
         if colpevole in lista_riunioni:
             return "Conflitto nella richiesta (duplicazione)", 409
@@ -107,14 +107,23 @@ class PrenotazioneResource(Resource):
         if not time_pattern.match(orario_inizio):
             return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
         if time_from_str(orario_inizio).hour<8 or time_from_str(orario_inizio).hour > 19 :
-            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
-        if check_sovrapposizione(lista_riunioni,orario_inizio, durata):
+             return "Conflitto di orario (sovrapposizione, inizio non valido o termine dopo le 20:00)", 422
+        
+        # stupid way for me to check sovvrapposizione
+        # because if i check sovvrapposizione, of couse it's gonna say true
+        # so i copy it to a new array, them delete that riunione so i can check if that colpevole has other meetings
+        # and also if the new meeting data is "sovvrapposto"
+        altre_riunioni = lista_riunioni.copy()
+        
+        if colpevole in altre_riunioni:
+            del altre_riunioni[colpevole]
+
+        if check_sovrapposizione(altre_riunioni,orario_inizio, durata):
             return "Conflitto di orario (sovrapposizione, inizio non valido o termine dopo le 20:00)", 422
         booking.create_prenotazione(
             date, colpevole, vittime, durata, orario_inizio
         )
 
-        # Return the created object structure
         response_payload = {
             "data": date,
             "colpevole": colpevole,
@@ -122,13 +131,17 @@ class PrenotazioneResource(Resource):
             "durata": durata,
             "orario_inizio": orario_inizio
         }
-        return response_payload, 201
+        return response_payload, 200
 
 
 def check_sovrapposizione(lista_riunioni, start_time_str, duration):
     new_start = time_from_str(start_time_str)
     new_start_minutes = new_start.hour * 60 + new_start.minute
     new_end_minutes = new_start_minutes + int(duration * 60)
+
+    day_end = 20 * 60
+    if new_end_minutes > day_end:
+        return True
     
     for meeting in lista_riunioni.values():
         existing_start = time_from_str(meeting["orario_inizio"])
@@ -138,7 +151,6 @@ def check_sovrapposizione(lista_riunioni, start_time_str, duration):
         if not (new_end_minutes <= existing_start_minutes or existing_end_minutes <= new_start_minutes):
             return True
     return False
-
 class CleanDatabase(Resource):
     def post(self):
         booking.clean_database()
@@ -146,6 +158,11 @@ class CleanDatabase(Resource):
 class RiepilogoGiornoResource(Resource):
 
     def get(self, date):
+        if(date is None): 
+            return "Richiesta non valida", 400
+        if(date_from_str(date) is None):
+            return "Richiesta non valida", 400
+
         ret_val = riep.get_dettagli_giornata(date)
         if ret_val is None:
             return "Richiesta non valida", 400
