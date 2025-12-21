@@ -1,0 +1,161 @@
+from flask import Flask, request
+from flask_restful import Resource, Api
+
+from prenotazione import Prenotazione
+from prenotazione import RiepilogoGiorno
+from prenotazione import RiunioneGiorno
+from date_validation import *
+import re
+
+
+booking = Prenotazione()
+riep = RiepilogoGiorno()
+riunione_giorno = RiunioneGiorno()
+
+app = Flask(__name__, static_url_path="/static", static_folder="static")
+
+api = Api(app)
+
+
+basePath = "/api/v1"
+
+
+class PrenotazioneResource(Resource):
+
+
+    def post(self, date):
+        prenotazione_ricevuta = request.json
+        if date is None:
+            return "Date is missing from URL. Format required: /room42/YYYY-MM-DD", 400
+        if date_from_str(date) is None:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if prenotazione_ricevuta is None:
+            return None, 400
+        
+        required_fields = ["colpevole", "vittime", "durata", "orario_inizio"]
+        for field in required_fields:
+            if field not in prenotazione_ricevuta:
+                return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        colpevole = prenotazione_ricevuta["colpevole"]
+        vittime = prenotazione_ricevuta["vittime"]
+        durata = prenotazione_ricevuta["durata"]
+        orario_inizio = prenotazione_ricevuta["orario_inizio"]
+
+        if not isinstance(vittime, list):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if len(vittime) > 20:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if not (0.5 <= durata <= 8):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if durata % 0.5 != 0:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        time_pattern = re.compile(r'^([0-1][0-9]|2[0-3]):[0-5][0-9]$')
+        if not time_pattern.match(orario_inizio):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if time_from_str(orario_inizio).hour<8 or time_from_str(orario_inizio).hour > 19 :
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        lista_riunioni = riunione_giorno.get_riunione_giorno(date) 
+        if colpevole in lista_riunioni:
+            return "Conflitto nella richiesta (duplicazione)", 409
+
+        if check_sovrapposizione(lista_riunioni,orario_inizio, durata):
+            return "Conflitto di orario (sovrapposizione, inizio non valido o termine dopo le 20:00)", 422
+        booking_id = booking.create_prenotazione(
+            date, colpevole, vittime, durata, orario_inizio
+        )
+
+        # Return the created object structure
+        response_payload = {
+            "data": date,
+            "colpevole": colpevole,
+            "vittime": vittime,
+            "durata": durata,
+            "orario_inizio": orario_inizio
+        }
+        return response_payload, 201
+    def put(self, date):
+        prenotazione_ricevuta = request.json
+        if date is None:
+            return "Date is missing from URL. Format required: /room42/YYYY-MM-DD", 400
+        if date_from_str(date) is None:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if not prenotazione_ricevuta:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        
+        required_fields = ["colpevole", "vittime", "durata", "orario_inizio"]
+        for field in required_fields:
+            if field not in prenotazione_ricevuta:
+                return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        colpevole = prenotazione_ricevuta["colpevole"]
+        vittime = prenotazione_ricevuta["vittime"]
+        durata = prenotazione_ricevuta["durata"]
+        orario_inizio = prenotazione_ricevuta["orario_inizio"]
+        
+        lista_riunioni = riunione_giorno.get_riunione_giorno(date) 
+        if colpevole not in lista_riunioni :
+            return "Prenotazione per data e colpevole specificati non trovata", 404
+       
+        if not isinstance(vittime, list):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if len(vittime) > 20:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if not (0.5 <= durata <= 8):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if durata % 0.5 != 0:
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        time_pattern = re.compile(r'^([0-1][0-9]|2[0-3]):[0-5][0-9]$')
+        if not time_pattern.match(orario_inizio):
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if time_from_str(orario_inizio).hour<8 or time_from_str(orario_inizio).hour > 19 :
+            return "Richiesta non valida (dati mancanti, data errata, troppi partecipanti, durata non valida, o colpevole già presente per quella data)", 400
+        if check_sovrapposizione(lista_riunioni,orario_inizio, durata):
+            return "Conflitto di orario (sovrapposizione, inizio non valido o termine dopo le 20:00)", 422
+        booking.create_prenotazione(
+            date, colpevole, vittime, durata, orario_inizio
+        )
+
+        # Return the created object structure
+        response_payload = {
+            "data": date,
+            "colpevole": colpevole,
+            "vittime": vittime,
+            "durata": durata,
+            "orario_inizio": orario_inizio
+        }
+        return response_payload, 201
+
+
+def check_sovrapposizione(lista_riunioni, start_time_str, duration):
+    new_start = time_from_str(start_time_str)
+    new_start_minutes = new_start.hour * 60 + new_start.minute
+    new_end_minutes = new_start_minutes + int(duration * 60)
+    
+    for meeting in lista_riunioni.values():
+        existing_start = time_from_str(meeting["orario_inizio"])
+        existing_start_minutes = existing_start.hour * 60 + existing_start.minute
+        existing_duration = float(meeting["durata"])
+        existing_end_minutes = existing_start_minutes + int(existing_duration* 60)
+        if not (new_end_minutes <= existing_start_minutes or existing_end_minutes <= new_start_minutes):
+            return True
+    return False
+
+class CleanDatabase(Resource):
+    def post(self):
+        booking.clean_database()
+        return None, 200
+class RiepilogoGiornoResource(Resource):
+
+    def get(self, date):
+        ret_val = riep.get_dettagli_giornata(date)
+        if ret_val is None:
+            return "Richiesta non valida", 400
+        return ret_val, 200
+
+
+api.add_resource(
+    PrenotazioneResource, f"{basePath}/room42/<string:date>"
+) 
+api.add_resource(RiepilogoGiornoResource, f"{basePath}/room42/<string:date>")
+api.add_resource(CleanDatabase,f"{basePath}/panic")
+if __name__ == "__main__":
+    app.run(host="127.0.0.1", port=8080, debug=True)
