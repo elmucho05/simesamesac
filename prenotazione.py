@@ -144,7 +144,7 @@ class SabateurMese(object):
     def __init__(self):
         self.db = firestore.Client()
         self.r_giorno = RiunioneGiorno()
-    def get_monthly_totals(self, mese):
+    def get_sabateur_mese(self, mese):
         month = parse_month(mese)
         if month is None:
             return None
@@ -172,6 +172,8 @@ class SabateurMese(object):
         if not totals: 
             return None
         sabateur = max(totals, key=totals.get)
+        if sabateur is None:
+            return {}
         
         indice_sabotaggio = totale_sabotaggi[sabateur]
         response = {
