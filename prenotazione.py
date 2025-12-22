@@ -128,6 +128,8 @@ class SlackerMese(object):
 
         totals = self.get_monthly_totals(mese)
         peggiore = max(totals, key= lambda x:totals[x])
+        if peggiore is None:
+            return {}
         totale_ore_perse = totals[peggiore]
         efficienza = float(totale_ore_perse // 160)#160 ore menisili, 8h giorno per 5 giorni
         response = {
@@ -135,6 +137,7 @@ class SlackerMese(object):
             "ore_riunion": totale_ore_perse,
             "efficienza" : efficienza
         }
+    
         return response
 
 class SabateurMese(object):
