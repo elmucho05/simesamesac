@@ -1,0 +1,14 @@
+<html>
+    <head>
+       <h1>Dettaglio giornata {{date}}</h1> 
+    </head>
+    <body>
+        <ul>
+            {% for  l in dettaglio_giornata["riunioni"]%}
+            <li>{{l["colpevole"]}}, vittime : {{l["vittime"]}}</li>
+            {% endfor %}
+        </ul>
+        <p>Totale ore perse {{dettaglio_giornata["totale_ore"]}}</p>
+        <p>Dannato del giorno {{dettaglio_giornata["dannato_del_giorno"]}}</p>
+    </body>
+</html>

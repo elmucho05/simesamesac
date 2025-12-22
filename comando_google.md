@@ -17,7 +17,7 @@
 # Creating project
 `export NAME=webuser`
 `export PROJECT_ID=`
-`gcloud projects create ${PROJECT_ID} --set-as-default` 
+`gcloud projects create ${PROJECT_ID} --set-as-default`
 
 ## Se il progetto non e' impostato come default:
   `gcloud config set project ${PROJECT_ID}`
@@ -25,7 +25,7 @@
 # Lista progetti
 `gcloud projects list`
 `gcloud projects describe ${PROJECT_ID}`
-
+# ATTACH BILLING
 # POI, CREARE L'APP
 `gcloud app create --project=${PROJECT_ID}`
 

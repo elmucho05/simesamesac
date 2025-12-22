@@ -82,6 +82,13 @@ class RiepilogoGiorno(object):
             }
         return response
 
+class RipilogoSettimana():
+    def __init__(self):
+        self.db = firestore.Client()
+    
+    def get_dettagli_settimana(self):
+        pass
+
 if __name__ == "__main__":
     p = Prenotazione()
     p.create_prenotazione("2025-12-19", "gerti", ["foo", "bar"], 1, "08:00")
