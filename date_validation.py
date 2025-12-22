@@ -72,6 +72,6 @@ def calculate_end_time(start_time_string, duration):
 def parse_month(month_str):
     """converte 'MM-YYYY' in oggetto datetime"""
     try:
-        return datetime.datetime.strptime(month_str, '%m-%Y')
-    except:
+        return datetime.strptime(month_str, '%m-%Y').date()
+    except ValueError:
         return None

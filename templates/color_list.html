@@ -1,0 +1,11 @@
+<html>
+    <link rel="stylesheet" href="/static/color.css">
+    <body>
+        <h1>List of colors</h1>
+        <ul>
+        {% for c in colors %}
+            <li><a href="/colors/{{c}}">{{c}}</a></li>
+        {% endfor %}
+        </ul>
+    </body>
+</html>
