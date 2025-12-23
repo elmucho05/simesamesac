@@ -24,10 +24,10 @@ def date_from_str(d):
         return None
         
     # Try ISO format first (YYYY-MM-DD) - This is what Swagger sends
-    try:
-        return datetime.strptime(d, '%Y-%m-%d')
-    except ValueError:
-        pass
+    # try:
+    #     return datetime.strptime(d, '%Y-%m-%d')
+    # except ValueError:
+    #     pass
 
     # Try Italian format (DD-MM-YYYY)
     try:
@@ -114,4 +114,10 @@ def get_month_dates():
         month_days.append(current_date.strftime("%d-%m-%Y"))
     return month_days
 
-    
+def estrai_mese_ordinabile(date_str):
+    """ Converte '23-12-2025' in '2025-12' """
+    try:
+        parts = date_str.split("-") # ["23", "12", "2025"]
+        return f"{parts[2]}-{parts[1]}"
+    except:
+        return None 

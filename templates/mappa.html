@@ -1,9 +1,28 @@
+<!DOCTYPE html>
 <html>
-    <link rel="stylesheet" href="/static/color.css">
     <head>
-        
+        <link rel="stylesheet" href="/static/color.css">
+        <title>Mappa della Follia</title>
     </head>
+    
     <body>
-          
+        <h1>Mappa della follia</h1>
+        {% if dati["totale_ore_menisili_sprecate"] > 4 %}
+            <h1 style="color:red">Room42 (Allarme!)</h1>
+        {% endif %}
+        <h2>Totale ore sprecate questo mese: {{ dati["totale_ore_menisili_sprecate"] }}</h2>
+
+        <h3>Riunioni settimanali:</h3>
+        <ul>
+            {% for data_meeting in dati["riunioni_settimana"] %}
+                <li>
+                    <strong>{{ data_meeting }}:</strong> 
+                    {{ data_meeting["colpevole"] }} 
+                </li>
+
+            {% else %}
+                <li>Nessuna riunione questa settimana!</li>
+            {% endfor %}
+        </ul>
     </body>
 </html>

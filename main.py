@@ -27,9 +27,12 @@ def get_dettaglio(date):
         return render_template("dettaglio.html", date=date, dettaglio_giornata=dettaglio_giornata), 200
     return render_template("404.html", path=request.path), 404
 
-@app.route("room42/mappa/")
+@app.route("/room42/mappa/")
 def get_mappa():
-    pass
+    dati = riep_sett.get_dettagli_settimana()
+    if dati is None:
+        return render_template("404.html", path=request.path), 404
+    return render_template("mappa.html",dati=dati), 200
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html", path=request.path), 404
