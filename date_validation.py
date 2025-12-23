@@ -1,4 +1,5 @@
-from datetime import datetime, time
+from datetime import datetime, time,timedelta
+import calendar
 def format_date_for_db(ui_date_str):
     """Converts 25-12-2023 -> 2023-12-25"""
     try:
@@ -75,3 +76,42 @@ def parse_month(month_str):
         return datetime.strptime(month_str, '%m-%Y').date()
     except ValueError:
         return None
+
+def get_week_dates():
+    datetime.today().weekday()
+
+    today = datetime.today()
+
+    start_of_week = today - timedelta(days=today.weekday())
+
+    week_dates = []
+    for i in range(5): #5 giorni lavorativi
+        current_day = start_of_week + timedelta(days=i)
+        week_dates.append(current_day.strftime("%d-%m-%Y")) 
+
+    return week_dates 
+
+# def get_month_dates():
+#     today = datetime.today().date().replace(day=1) # to get the same as the prof
+#     start_of_month = today.min.day
+#     end_of_month = today.max.day
+#     month_days = []
+#     stringa = ""
+#     for i in range(start_of_month, end_of_month+1): #5 giorni lavorativi
+#         stringa = f"{i}-{today.month}-{today.year}" 
+#         month_days.append(stringa)
+
+#     return month_days
+
+def get_month_dates():
+    today = datetime.today().date()
+    
+    _, last_day = calendar.monthrange(today.year, today.month)
+    
+    month_days = []
+    for i in range(1, last_day + 1):
+        current_date = today.replace(day=i) # to get the same as the prof format
+        month_days.append(current_date.strftime("%d-%m-%Y"))
+    return month_days
+
+    

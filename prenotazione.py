@@ -83,12 +83,48 @@ class RiepilogoGiorno(object):
             }
         return response
 
-class RipilogoSettimana(object):
+class RiepilogoSettimana(object):
     def __init__(self):
         self.db = firestore.Client()
+        self.riep = RiepilogoGiorno()
     
     def get_dettagli_settimana(self):
-        pass
+        week_dates = get_week_dates()
+        if not week_dates:
+            return []
+        week_meetings = [self.riep.get_dettagli_giornata(d) for d in week_dates]
+        # somma_ore_settimanali = sum(item["totale_ore"] for item in week_meetings) 
+        somma_ore_settimanali = 0
+        somma_partecipanti = 0
+        for m in week_meetings:
+            somma_ore_settimanali += m["totale_ore"]
+            somma_partecipanti += len(m["riunioni"])
+        month_dates = get_month_dates()
+        if not month_dates:
+            return []
+        month_meetings = [self.riep.get_dettagli_giornata(d) for d in month_dates]
+        somma_ore_mensili = sum(item["totale_ore"] for item in month_meetings)
+
+        response = {
+            "riunioni_settimana" : week_meetings,
+            "indicatore_gravita" : somma_ore_settimanali*somma_partecipanti,
+            "totale_ore_menisili_sprecate" : somma_ore_mensili
+        }
+        return response
+        # if not week_dates:
+        #     return {}
+
+        # meetings_ref = self.db.collection("meeting_crimes")
+        # week_refs = [meetings_ref.document(d) for d in week_dates]
+
+        # try:
+        #     docs = self.db.get_all(week_refs)
+        # except Exception as e:
+        #     print(f"Error: {e}")
+        #     return {}
+
+        # return {doc.id: doc.to_dict() for doc in docs if doc.exists}
+      
 class SlackerMese(object):
     def __init__(self):
         self.db = firestore.Client()
@@ -117,7 +153,7 @@ class SlackerMese(object):
                 vittime = l["vittime"]
                 if vittime:
                     for v in vittime:
-                        totals[v] = totals.get(v, 0) + duration
+                        totals[v] = totals.get(v, 0) + duration #modo figo di fare la stessa cosa di sopra
         if not totals: 
             return {}
         return totals
