@@ -6,6 +6,7 @@ from prenotazione import *
 app = Flask(__name__, static_url_path="/static", static_folder="static")
 booking = Prenotazione()
 riep = RiepilogoGiorno()
+riep_sett = RiepilogoSettimana()
 
 class Colorform(Form):
     # eredita' e polimorfismo, in questo caso si chiama composizione
@@ -25,6 +26,13 @@ def get_dettaglio(date):
             dettaglio_giornata = {"riunioni" : []}
         return render_template("dettaglio.html", date=date, dettaglio_giornata=dettaglio_giornata), 200
     return render_template("404.html", path=request.path), 404
+
+@app.route("/room42/mappa/")
+def get_mappa():
+    dati = riep_sett.get_dettagli_settimana()
+    if dati is None:
+        return render_template("404.html", path=request.path), 404
+    return render_template("mappa.html",dati=dati), 200
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template("404.html", path=request.path), 404

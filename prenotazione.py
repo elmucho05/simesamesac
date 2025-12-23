@@ -83,12 +83,48 @@ class RiepilogoGiorno(object):
             }
         return response
 
-class RipilogoSettimana(object):
+class RiepilogoSettimana(object):
     def __init__(self):
         self.db = firestore.Client()
+        self.riep = RiepilogoGiorno()
     
     def get_dettagli_settimana(self):
-        pass
+        week_dates = get_week_dates()
+        if not week_dates:
+            return []
+        week_meetings = [self.riep.get_dettagli_giornata(d) for d in week_dates]
+        # somma_ore_settimanali = sum(item["totale_ore"] for item in week_meetings) 
+        somma_ore_settimanali = 0
+        somma_partecipanti = 0
+        for m in week_meetings:
+            somma_ore_settimanali += m["totale_ore"]
+            somma_partecipanti += len(m["riunioni"])
+        month_dates = get_month_dates()
+        if not month_dates:
+            return []
+        month_meetings = [self.riep.get_dettagli_giornata(d) for d in month_dates]
+        somma_ore_mensili = sum(item["totale_ore"] for item in month_meetings)
+
+        response = {
+            "riunioni_settimana" : week_meetings,
+            "indicatore_gravita" : somma_ore_settimanali*somma_partecipanti,
+            "totale_ore_menisili_sprecate" : somma_ore_mensili
+        }
+        return response
+        # if not week_dates:
+        #     return {}
+
+        # meetings_ref = self.db.collection("meeting_crimes")
+        # week_refs = [meetings_ref.document(d) for d in week_dates]
+
+        # try:
+        #     docs = self.db.get_all(week_refs)
+        # except Exception as e:
+        #     print(f"Error: {e}")
+        #     return {}
+
+        # return {doc.id: doc.to_dict() for doc in docs if doc.exists}
+      
 class SlackerMese(object):
     def __init__(self):
         self.db = firestore.Client()
@@ -109,24 +145,21 @@ class SlackerMese(object):
             for l in lista.values():
                 duration = float(l["durata"])
                 colpevole = l["colpevole"]
-                if colpevole in totals:
-                    totals[colpevole] +=duration
-                else:
-                    totals[colpevole] = duration
-                
+                totals[colpevole]  = totals.get(colpevole, 0) + duration
+
                 vittime = l["vittime"]
                 if vittime:
                     for v in vittime:
-                        totals[v] = totals.get(v, 0) + duration
+                        totals[v] = totals.get(v, 0) + duration #modo figo di fare la stessa cosa di sopra
         if not totals: 
             return {}
         return totals
 
     def get_slacker_mese(self, mese):
-        if not totals:
-            return None
 
         totals = self.get_monthly_totals(mese)
+        if not totals:
+            return None
         peggiore = max(totals, key= lambda x:totals[x])
         if peggiore is None:
             return {}
@@ -134,16 +167,17 @@ class SlackerMese(object):
         efficienza = float(totale_ore_perse // 160)#160 ore menisili, 8h giorno per 5 giorni
         response = {
             "dipendente" : peggiore,
-            "ore_riunion": totale_ore_perse,
-            "efficienza" : efficienza
+            "mese" : mese,
+            "ore_riunioni": totale_ore_perse,
         }
-    
+
         return response
 
 class SabateurMese(object):
     def __init__(self):
         self.db = firestore.Client()
         self.r_giorno = RiunioneGiorno()
+        self.riep = RiepilogoGiorno()
     def get_sabateur_mese(self, mese):
         month = parse_month(mese)
         if month is None:
@@ -154,20 +188,19 @@ class SabateurMese(object):
             print(v.id)
             if mese in v.id:
                 meeting_mensili.append(v.id) 
+
         totals = {}
-        numero_vittime = 0
+        numero_vittime = {}
         totale_sabotaggi = {}
         numero_riunioni_organizzate = 0
-        
         for m in meeting_mensili:
             lista = self.r_giorno.get_riunione_giorno(m)
             for l in lista.values():
                 totals[l["colpevole"]] = totals.get(l["colpevole"], 0) + 1
-                numero_vittime = len(l["vittime"])
-                danno_riunione = l["durata"]*numero_vittime
+                numero_vittime[l["colpevole"]]= numero_vittime.get(l["colpevole"], 0) + len(l["vittime"])
+                danno_riunione = l["durata"]*numero_vittime[l["colpevole"]]
                 totale_sabotaggi[l["colpevole"]] = totale_sabotaggi.get(l["colpevole"], 0) + danno_riunione
             numero_riunioni_organizzate += 1
-
             
         if not totals: 
             return None
@@ -176,10 +209,12 @@ class SabateurMese(object):
             return {}
         
         indice_sabotaggio = totale_sabotaggi[sabateur]
+        vittime_totali = numero_vittime[sabateur]
         response = {
             "manager" : sabateur,
+            "mese" : mese,
             "riunioni_organizzate" : numero_riunioni_organizzate,
-            "indice_sabotaggio" : indice_sabotaggio
+            "vittime_totali" : vittime_totali 
         }
         return response
 

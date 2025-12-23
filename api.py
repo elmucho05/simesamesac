@@ -178,8 +178,8 @@ class SlackerMeseResource(Resource):
             return "Richiesta non valida", 400
         if parse_month(mese) is None:
             return "Richiesta non valida", 400
-        
-        slacker = slacker_mese.get_slacker_mese()
+         
+        slacker = slacker_mese.get_slacker_mese(mese)
         if not slacker :
             return "Nessun dato disponibile per il mese specificato", 404
         return slacker, 200
@@ -202,8 +202,8 @@ api.add_resource(
 ) 
 api.add_resource(RiepilogoGiornoResource, f"{basePath}/room42/<string:date>")
 api.add_resource(CleanDatabase,f"{basePath}/panic")
-api.add.resource(SlackerMeseResource, f"{basePath}/stats/slacker/<string:mese>")
-api.add.resource(SabateurMeseResource, f"{basePath}/stats/sabateur/<string:mese>")
+api.add_resource(SlackerMeseResource, f"{basePath}/stats/slackers/<string:mese>")
+api.add_resource(SabateurMeseResource, f"{basePath}/stats/saboteurs/<string:mese>")
 
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=8080, debug=True)
