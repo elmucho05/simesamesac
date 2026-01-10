@@ -52,6 +52,7 @@ gcloud projects create ${PROJECT_ID} --set-as-default
 gcloud config set project ${PROJECT_ID}
 
 # Abilitazione dei servizi necessari
+## ABILITARE IL BILLING PRIMA
 gcloud services enable \
   appengine.googleapis.com \
   cloudbuild.googleapis.com \
